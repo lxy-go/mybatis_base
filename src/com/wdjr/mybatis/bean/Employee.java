@@ -1,11 +1,40 @@
 package com.wdjr.mybatis.bean;
 
-public class Employee {
+import java.io.Serializable;
+import java.util.List;
 
+import org.apache.ibatis.type.Alias;
+
+//自定义别名，防止其他的类叫相同的名字
+@Alias("emp")
+public class Employee implements Serializable {
+
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private Integer id;
 	private String lastName;
 	private String email;
 	private String gender;
+	private Integer d_id;
+	private Department dept;
+	public Employee() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public Employee(Integer id, String lastName, String email, String gender, Integer d_id,Department dept) {
+		super();
+		this.id = id;
+		this.lastName = lastName;
+		this.email = email;
+		this.gender = gender;
+		this.d_id = d_id;
+		this.dept=dept;
+	}
+
 	public Integer getId() {
 		return id;
 	}
@@ -30,12 +59,34 @@ public class Employee {
 	public void setGender(String gender) {
 		this.gender = gender;
 	}
+	public Integer getD_id() {
+		return d_id;
+	}
+
+	public void setD_id(Integer d_id) {
+		this.d_id = d_id;
+	}
+
+	
+	public Department getDept() {
+		return dept;
+	}
+
+	public void setDept(Department dept) {
+		this.dept = dept;
+	}
+
+	
+
+	@Override
+	public String toString() {
+		return "Employee [id=" + id + ", lastName=" + lastName + ", email=" + email + ", gender=" + gender + ", d_id="
+				+ d_id + ", dept=" + dept + "]";
+	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
-	@Override
-	public String toString() {
-		return "Employee [id=" + id + ", lastName=" + lastName + ", email=" + email + ", gender=" + gender + "]";
-	}
+
 	
 }

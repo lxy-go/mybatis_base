@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wdjr.mybatis.dao.EmployeeMapperPlus">
+<!-- ResultMap:自定义映射规则 ,不指定result的会自动封装，but还是要自己封装最好
+type:自定义的java类型
+id:唯一id方便引用
+-->
+<resultMap type="com.wdjr.mybatis.bean.Employee" id="MySimpleEmp">
+	<!-- 指定主键的封装规则
+		id定义会有优化
+		column:指定那一列
+		property:指定对应的javaBean属性
+	 -->
+	<id column="id" property="id"/>
+	<result column="last_name" property="lastName"/>
+	<result column="email" property="email"/>
+	<result column="gender" property="gender"/>	
+</resultMap>
+<!-- 
+联合查询：级联属性封装结果集
+ -->
+<resultMap type="com.wdjr.mybatis.bean.Employee" id="MyDifEmp">
+	<!-- 指定主键的封装规则
+		id定义会有优化
+		column:指定那一列
+		property:指定对应的javaBean属性
+	 -->
+	<id column="id" property="id"/>
+	<result column="last_name" property="lastName"/>
+	<result column="email" property="email"/>
+	<result column="gender" property="gender"/>	
+	<result column="did" property="dept.id"/>	
+	<result column="dept_name" property="dept.deptName"/>	
+</resultMap>
+
+<!-- association可以指定联合的javaBean对象 -->
+<resultMap type="com.wdjr.mybatis.bean.Employee" id="MyDifEmp2">
+	<id column="id" property="id"/>
+	<result column="last_name" property="lastName"/>
+	<result column="email" property="email"/>
+	<result column="gender" property="gender"/>
+	<!-- property:指定是哪个属性的联合对象
+		javaType:指定对象的类型【不能省略】
+	 -->	
+	<association property="dept" javaType="com.wdjr.mybatis.bean.Department">
+		<id column="did" property="id"/>
+		<result column="dept_name" property="deptName"/>
+	</association>
+	
+</resultMap>
+
+<!-- 使用association分步骤查询
+	1.按照员工信息id查询员工信息
+	2.根据员工查询的信息d_id去查出部门的信息
+	3.部门设置到员工中，
+ -->
+	<resultMap type="com.wdjr.mybatis.bean.Employee" id="MyEmpByStep">
+		<id column="id" property="id"/>
+		<result column="last_name" property="lastName"/>
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>	
+		<result column="d_id" property="d_id"/>	
+		<!-- 定义对象关联封装规则
+			select:表明当前属性是调用select指定的方查询的结构
+			column:指定那一列的值传给这个方法
+			流程：使用select指定的方法（传入column指定的之这列参数的值）查出对象，并封装给property指定的属性
+		 -->
+		<association property="dept" 
+		select="com.wdjr.mybatis.dao.DepartmentMapper.getDeptById"
+		column="d_id">			
+		</association>
+	</resultMap>
+	<!-- discriminator javaType 
+	鉴别器：mybatis可以使用discriminator判断某列的值，然后根据某列的值改变封装的行为
+	封装Employee：
+		如果是女生，就把部门信息查询出来，否则不查询
+		如果是男生，就把last_name这一列的值赋值给email
+	 -->
+
+	 <resultMap type="com.wdjr.mybatis.bean.Employee" id="MyEmpDis">
+ 		<id column="id" property="id"/>
+		<result column="last_name" property="lastName"/>
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>
+		<!-- javaType:列值对应的java类型
+			column:指定判定哪列
+				resultType:输出的结果类型,不能缺少
+		 -->	
+		 <discriminator javaType="string" column="gender">
+		 	<case value="0" resultType="com.wdjr.mybatis.bean.Employee">
+		 		<association property="dept"
+		 		select="com.wdjr.mybatis.dao.DepartmentMapper.getDeptById"
+		 		column="d_id"></association>
+		 	</case>
+		 	<case value="1" resultType="com.wdjr.mybatis.bean.Employee">
+		 		<id column="id" property="id"/>
+				<result column="last_name" property="lastName"/>
+				<result column="last_name" property="email"/>
+				<result column="gender" property="gender"/>
+		 	</case>
+		 </discriminator>
+
+	 </resultMap>
+
+<!-- public Employee getEmpByIdStep(Integer id); -->
+	<select id="getEmpByIdStep" resultMap="MyEmpByStep">
+		select * from tbl_employee where id=#{id}
+	</select>
+
+
+	<!-- public Employee getEmpById(Integer id); -->
+	<select id="getEmpById" resultMap="MySimpleEmp">
+		select * from tbl_employee where id=#{id}
+	</select>
+	
+	<!-- public Employee getEmpAndDept(Integer id); -->
+	<select id="getEmpAndDept" resultMap="MyDifEmp2">
+		select e.id id,e.last_name last_name,e.email email,e.gender gender,e.d_id d_id ,
+		d.id did,d.dept_name dept_name  from tbl_employee e,tab_dept d 
+		where e.d_id=d.id AND e.id=#{id};
+	</select>
+<!-- 使用延迟加载
+	Employee==》Dept:
+	每次查询Employee对象的时候，将一起查询出来
+	部门信息在我们使用的时候再去查询：
+	分段查询的基础加上两个配置 全局配置文件
+ -->
+ 
+
+	<!-- public List<Employee> getEmpsByDeptId(Integer id); -->
+	<select id="getEmpsByDeptId" resultType="com.wdjr.mybatis.bean.Employee">
+		select id,last_name,email,gender from tbl_employee where d_id=#{deptId}
+	</select>
+	
+
+	 
+
+	
+</mapper>

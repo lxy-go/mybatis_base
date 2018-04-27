@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.wdjr.mybatis.dao.EmployeeMapperDynamicSQL">
+<!-- if choose trim foreach -->
+<!-- 查询员工，要求携带了那个字段就带上这个字段的值 -->
+<!-- public List<Employee> getEmpsByConditionIf(Employee employee) -->
+<!-- 第一种：使用where 1=1
+	第二种：<where></where>:只会去掉第一个 开头and and写在后面就不可以
+ -->
+<select id="getEmpsByConditionIf" resultType="com.wdjr.mybatis.bean.Employee">
+	select * from tbl_employee 
+	<where>
+	<!-- test:表达的条件（OGNL） -->
+	<if test="id!=null">
+		id=#{id}
+	</if>
+	<if test="lastName!=null and lastName!=''" >
+		and last_name like #{lastName}
+	</if>
+	<if test="email!=null and email.trim()!=''" >
+		and email=#{email}
+	</if>
+	<!-- OGNL会进行字符串和数字的转换 -->
+	<if test="gender==0 or gender==1">
+		and gender=#{gender}
+	</if>
+	</where> 
+</select>
+
+<!-- public List<Employee> getEmpsByConditionTrim(Employee employee); -->
+<select id="getEmpsByConditionTrim">
+		select * from tbl_employee 
+		<!-- prefix:前缀是trim标签体 给拼串后的加前缀
+		prefixOverrides：前缀覆盖：去掉整个字符串前面多余的字符
+		suffix:后缀 suffix给拼串后的整个字符创加一个后缀
+		suffixOverrides= 后缀覆盖	，去掉整个字符串后面多余的字符（）
+		 -->
+	<trim prefix="where" prefixOverrides="" suffix="" suffixOverrides="and" >
+		<!-- test:表达的条件（OGNL） -->
+		<if test="id!=null">
+			id=#{id} and
+		</if>
+		<if test="lastName!=null and lastName!=''" >
+			last_name like #{lastName} and 
+		</if>
+		<if test="email!=null and email.trim()!=''" >
+			email=#{email} and 
+		</if>
+		<!-- OGNL会进行字符串和数字的转换 -->
+		<if test="gender==0 or gender==1">
+			gender=#{gender}
+		</if>
+	</trim>
+	
+</select>
+<!-- public List<Employee> getEmpsByConditionChoose(Employee employee);	 -->
+<select id="getEmpsByConditionChoose" resultType="com.wdjr.mybatis.bean.Employee">
+	select * from tbl_employee 
+	<where>
+		<choose>
+			<when test="id!=null">
+				id=#{id}
+			</when>
+			<when test="lastName!=null">
+				last_name LIKE #{lastName}
+			</when>
+			<when test="email!=null">
+				emial=#{email}
+			</when>
+			<when test="gender!=null">
+				gender=#{gender}
+			</when>
+
+		</choose>
+	</where>
+</select>
+
+<!-- public void updateEmp(Employee employee); -->
+	<update id="updateEmp">
+		update tbl_employee 
+		<set>
+			<if test="lastName!=null">
+				last_name=#{lastName}
+			</if>
+			<if test="email!=null">
+				email=#{email}
+			</if>
+			<if test="gender!=null">
+				gender=#{gender}
+			</if>
+			
+		</set>
+	</update>
+	
+	<!-- public List<Employee> getEmpsByConditionForeach(Employee employee); -->
+	<select id="getEmpsByConditionForeach" resultType="com.wdjr.mybatis.bean.Employee">
+		select * from tbl_employee where id in 
+		<!-- 
+		collection:指定遍历的集合
+			list:类型的参数会特殊处理封装在map中，map的key就叫list
+		item：将当前遍历出的元素赋值给指定的变量
+		separator:每个元素的分隔符
+		open:遍历所有的结果拼接一个开始的字符
+		close:遍历所有的结果拼接一个结束的字符
+		index:遍历list的时候index是索引,item就是当前值，
+			     遍历map的时候index表示就是map的key,item是map的值
+		#{变量名}就能去除变量的值也就是当前遍历出的元素
+		 -->
+		 <foreach collection="ids" item="item_id" separator="," open="(" close=")" >
+		 	#{item_id}
+		 </foreach>
+		 
+	</select>
+	
+	<!-- MySQL下批量保存，可以foreach遍历 -->
+	<!-- public void addEmp(@Param("emps")List<Employee> emps); -->
+ 	<insert id="addEmp">
+		insert into tbl_employee(
+			<include refid="InsertColumn">
+				<property name="genderColumn" value="gender"/>
+			</include>
+		)
+		values
+		<foreach collection="emps" item="emp" separator=",">
+			(#{emp.lastName},#{emp.email},#{emp.gender},#{emp.dept.id})
+		</foreach>
+	</insert> 
+	
+	<!-- 发送完整的sql，foreach insert语句 
+		这种方式需要数据库连接属性allowMultiQueries
+	 -->
+<!-- 		<insert id="addEmp">
+
+		<foreach collection="emps" item="emp" separator=";">
+					insert into tbl_employee(last_name,email,gender,d_id)
+		values(#{emp.lastName},#{emp.email},#{emp.gender},#{emp.dept.id})
+		</foreach>
+	</insert> -->
+	<!-- oracle不支持values(),(),() -->
+	
+	<!-- 两个内置函数
+		不只是方法传递传递过来的参数可以被用来判断，取值。。
+		mybatis默认还有两个内置函数
+		_paramter:代表整个参数
+			单个参数：_parameter就是这个函数例如代表整个emp对象
+			多个参数：参数会被封装成一个map;_paramter就是代表整个map
+		_databaseId:如果配置了DatabaseIdProvider标签
+		如果配置文件配置了databaseId，这就会有数据
+	 -->
+	<!-- public List<Employee> getEmpsTestInnerParamter(Employee employee); -->
+	<select id="getEmpsTestInnerParamter" resultType="com.wdjr.mybatis.bean.Employee">
+	<bind name="_lastName" value="'%'+lastName+'%'"/>
+		select * from tbl_employee
+		<if test="_parameter!=null">
+			where last_name like #{_lastName}
+		</if>	
+	</select>
+	<!-- bind的OGNL的值引用到 -->
+	
+	<sql id="InsertColumn">
+		last_name,email,${genderColumn},d_id
+	</sql>
+	
+</mapper>

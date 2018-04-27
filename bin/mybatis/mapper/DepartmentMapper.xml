@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wdjr.mybatis.dao.DepartmentMapper">
+	<!-- public Department getDeptById(Integer id); -->
+	<resultMap type="com.wdjr.mybatis.bean.Department" id="MyDept">
+		<id column="id" property="id"/>
+		<result column="dept_name" property="deptName"/>
+	</resultMap>
+	
+	<select id="getDeptById" resultMap="MyDept" >
+		select * from tab_dept where id=#{id}
+	</select>
+
+<resultMap type="com.wdjr.mybatis.bean.Department" id="MyDeptPlus">
+	<id column="did" property="id"/>
+	<result column="dept_name" property="deptName"/>
+	<!-- 定义关联的集合属性的封装规则
+			ofType:指定集合里面的元素 -->
+	<collection property="emps" ofType="com.wdjr.mybatis.bean.Employee">
+		<!-- 定义这个集合中元素的封装规则 -->
+		<id column="eid" property="id"/>
+		<result column="last_name" property="lastName"/>
+		<result column="email" property="email"/>
+		<result column="gender" property="gender"/>
+	</collection>
+</resultMap>
+	
+<!-- public Department getDeptByIdPlus(Integer id); -->
+
+<select id="getDeptByIdPlus" resultMap="MyDeptPlus">
+	SELECT d.id did,d.dept_name dept_name,
+	e.id eid,e.last_name last_name,e.email email,e.gender gender  
+	FROM tab_dept d 
+	LEFT JOIN tbl_employee e 
+	ON d.id=e.d_id 
+	WHERE d.id=#{id}
+</select> 
+
+
+<resultMap type="com.wdjr.mybatis.bean.Department" id="MyDeptStep">
+<!-- 默认延迟加载：lazy/eager立即加载
+传递多个参数column"{key1=column1,key2=column2}"
+ -->
+	<id column="did" property="id"/>
+	<result column="dept_name" property="deptName"/>
+	<collection property="emps"
+	select="com.wdjr.mybatis.dao.EmployeeMapperPlus.getEmpsByDeptId"
+	column="{deptId=id}"	fetchType="lazy"></collection>
+</resultMap>
+<!-- public Department getDeptByIdStep(Integer id); -->
+	<select id="getDeptByIdStep" resultMap="MyDeptStep">
+		select id,dept_name deptName from tab_dept where id=#{id}
+	</select>
+</mapper>

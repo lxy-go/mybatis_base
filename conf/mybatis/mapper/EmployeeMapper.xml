@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+namespace:名称空间-指定接口的全类名
+id:唯一标识
+resultType:返回值类型
+#{id}从传递过来的参数中取出id值（类似?占位符）
+public Employee getEmpById(Integer id); 和唯一标识的一样
+mysql支持自增组件，获取自增组件，mybatis也是利用statement.getGenreatedKeys()
+useGeneratedKeys="true";使用自增主键获取主键值策略
+keyProperty:指定对应的主键属性，也就是mybatis获取主键值以后，将这个值封装给javaBean的哪个属性
+ -->
+ 
+<mapper namespace="com.wdjr.mybatis.dao.EmployeeMapper">
+
+	<!-- 
+	eviction:缓存回收策略，超了后怎么处理 LRU FIFO SOFT WEAK (默认LRU)
+	flushInterval：缓存刷新间隔，多长时间清空一次，默认不清空，设置毫秒值
+	readOnly：缓存是否只读，true：只读（不安全速度快）：mybatis认为所有从缓存中获取数据的操作，都是只读操作，为了加快获取速度，直接回将数据在缓存中的引用交给用户
+					   false：mybatis觉得获取的数据可能被修改，mybatis会序列化于反序列化克隆数据
+	size：缓存存放多少元素
+	type:指定自定义缓存的全类名
+	实现cache接口 全类名放到type上
+	 -->
+	<cache type="org.mybatis.caches.ehcache.EhcacheCache"></cache>
+
+<!-- public Map<Integer,Employee> getEmpByLastNameLikeReturnMap(String lastName); -->
+
+	<select id="getEmpByLastNameLikeReturnMap" resultType="com.wdjr.mybatis.bean.Employee" >
+		select * from tbl_employee where last_name like #{lastName}
+	</select>
+<!-- public Map<String,Object> getEmpByIdReturnMap(Integer id); -->
+	<select id="getEmpByIdReturnMap" resultType="map" >
+		select * from tbl_employee where id = #{id}
+	</select>
+	<select id="getEmpById" resultType="com.wdjr.mybatis.bean.Employee" >
+		select * from tbl_employee where id = #{id}
+	</select>
+	<insert id="addEmp" useGeneratedKeys="true" keyProperty="id">
+		insert into tbl_employee(last_name,email,gender) 
+		values(#{lastName},#{email},#{gender})
+	</insert>
+ 	<!-- oracle -->
+	<!--<insert id="addEmp" databaseId="oracle" >
+	order="BEFORE  "在sql之前进行运行
+		resultType:查出的数据的返回值类型
+	
+	
+		<selectKey order="BEFORE" keyProperty="id" resultType="Integer">
+			select EMPLOYEES_SEQ.nextval from dual
+		</selectKey>
+		insert into tbl_employee(last_name,email,gender) 
+		values(#{id},#{lastName},#{email})
+	</insert> -->
+	<update id="updateEmp">
+		update tbl_employee
+			set last_name=#{lastName},email=#{email},gender=#{gender}
+			where id=#{id}
+	</update>
+	<delete id="deletEmpById">
+		delete from tbl_employee where id=#{id}
+	</delete>
+</mapper>

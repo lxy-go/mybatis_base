@@ -2,21 +2,85 @@
 <!DOCTYPE configuration
 PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
 <configuration>
+	<!-- 1.引入外部的properties文件,如果在某个包下，就com/wdjr/dbconfig.properties -->
+	<properties resource="dbconfig.properties"></properties>
+	<!-- 2.最重要的配置，有很多配置选项 -->
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true" />
+
+		<setting name="logImpl" value="STDOUT_LOGGING"/>
+		<setting name="cacheEnabled" value="true"/>
+	</settings> 
+	
+	<!-- 3.为某个类起别名 -->
+	<typeAliases>
+	<!-- type:指定要起别名的类型全类名；默认别名是类名的小写 -->
+		<!-- <typeAlias type="com.wdjr.mybatis.bean.Employee" /> -->
+		<!-- package批量起别名
+		  name:指定包名,别名不区分大小写，当包下的类名相同，使用@Alias为某个类型起新的别名
+		 -->
+		<package name="com.wdjr.mybatis.bean"/>
+	</typeAliases>
+	
+	<!-- 4.类型处理，例如日期类型处理器，Stringchar varchar   把java和数据库的类型匹配 -->
+
+    <!-- 5.插件：拦截四大对象(Executor(Exe)/ParameterHandler(para)/ResultSetHandler(result)/StatementHandler(sql))，动态代理 -->
+
+	<!-- 6.环境(s)配置，mybatis可以配置多种环境
+		default:指定environment的id选择环境，达到快速切换配置
+		environment：环境配置
+		id:当前环境的唯一标识
+		transactionManage：事务管理器
+			type:事务管理器类型 JDBC|MANAGED(JEE服务器配置)别名
+			configuration:    JdbcTransactionFactory
+   							  ManagedTransactionFactory
+   			**Spring事务控制|自定义管理器实现接口，type指定为全类名**
+		dataSource：数据源配置
+			type:UNPOOLED|POOLED|JNDI|自定义数据源
+	 -->
 	<environments default="development">
 		<environment id="development">
 			<transactionManager type="JDBC" />
 			<dataSource type="POOLED">
-				<property name="driver" value="com.mysql.jdbc.Driver" />
-				<property name="url" value="jdbc:mysql://192.168.179.131:3306/mybatis" />
-				<property name="username" value="root" />
-				<property name="password" value="Welcome_1" />
+				<property name="driver" value="${jdbc.driver}" />
+				<property name="url" value="${jdbc.url}" />
+				<property name="username" value="${jdbc.username}" />
+				<property name="password" value="${jdbc.password}" />
 			</dataSource>
 		</environment>
 	</environments>
 
+	<!-- 7.多数据库厂商 一致性
+		获取厂商标识getDatabaseProductName(),mybatis就能访问MySQL,Oracle,SQL Server,xxx
+	 -->
+<!-- 	<databaseIdProvider type="DB_VENDOR">
+		为不同的数据库厂商起别名
+		<property name="MySQL" value="mysql"/>
+		<property name="Oracle" value="oracle"/>
+		<property name="SQL Server" value="sqlserver"/>
+	</databaseIdProvider> -->
+	<!-- 8.将sql映射注册到全局配置中 -->
+
+	<!-- mapper:注册一个sql映射
+			resource:引用类路径下的sql映射文件
+			url:引用网络路径或磁盘下的sql映射文件
+			注册接口：
+			class:应用动态接口
+				1.sql映射文件，文件名和接口同名，放在与接口的同一目录下
+				2.没有映射文件，所有的sql都是基于注解写在接口
+			推荐：重要的写sql映射文件
+			           不重要使用注解的方式
+	 -->
+	 <!-- package：批量注册（映射文件+接口名） -->
 	<!-- 将写好的sql映射文件一定要注册到全局配置文件中 -->
 	<mappers>
-		<mapper resource="EmployeeMapper.xml" />
+		<mapper resource="mybatis/mapper/EmployeeMapper.xml" /> 
+		<mapper resource="mybatis/mapper/EmployeeMapperPlus.xml" /> 
+		<mapper resource="mybatis/mapper/DepartmentMapper.xml" /> 
+		<mapper resource="mybatis/mapper/EmployeeMapperDynamicSQL.xml" /> 
+		<!-- <mapper class="com.wdjr.mybatis.dao.EmployeeMapperAnnotation"/> -->
+		<!-- <package name="com.wdjr.mybatis.dao"/> -->
 	</mappers>
 </configuration>
